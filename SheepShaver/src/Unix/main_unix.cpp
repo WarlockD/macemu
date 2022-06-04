@@ -196,7 +196,7 @@ uint8 *RAMBaseHost;		// Base address of Mac RAM (host address space)
 uint8 *ROMBaseHost;		// Base address of Mac ROM (host address space)
 uint32 ROMEnd;
 
-#if defined(__APPLE__) && defined(__x86_64__)
+#ifdef __APPLE__
 uint8 gZeroPage[0x3000], gKernelData[0x2000];
 #endif
 
@@ -921,7 +921,7 @@ int main(int argc, char **argv)
 		goto quit;
 	}
 
-#if !defined(__APPLE__) || !defined(__x86_64__)
+#ifndef __APPLE__
 	// Create areas for Kernel Data
 	if (!kernel_data_init())
 		goto quit;
