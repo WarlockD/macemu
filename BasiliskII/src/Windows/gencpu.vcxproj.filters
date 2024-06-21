@@ -15,10 +15,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\uae_cpu\gencpu.cpp">
+    <ClCompile Include="..\uae_cpu\gencpu.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\uae_cpu\readcpu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\uae_cpu\cpudefs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

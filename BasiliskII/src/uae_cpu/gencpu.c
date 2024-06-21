@@ -35,8 +35,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <vector>
-#include <string>
 
 #include "sysdeps.h"
 #include "readcpu.h"
@@ -69,39 +67,34 @@ static unsigned long *counts;
 
 static void read_counts (void)
 {
-	FILE* file = NULL;
-    unsigned long opcode=0, count=0, total=0;
+    FILE *file;
+    unsigned long opcode, count, total;
     char name[20];
     int nr = 0;
     memset (counts, 0, 65536 * sizeof *counts);
 
     file = fopen ("frequent.68k", "r");
-	if (file == NULL) {
-		printf("Cannot find frequent.68k\n");
-		assert(file != NULL);
-	}
     if (file) {
-		fscanf (file, "Total: %lu\n", &total);
-		while (fscanf (file, "%lx: %lu %s\n", &opcode, &count, name) == 3) {
-			opcode_next_clev[nr] = 4;
-			opcode_last_postfix[nr] = -1;
-			opcode_map[nr++] = opcode;
-			counts[opcode] = count;
-		}
-		fclose (file);
+	fscanf (file, "Total: %lu\n", &total);
+	while (fscanf (file, "%lx: %lu %s\n", &opcode, &count, name) == 3) {
+	    opcode_next_clev[nr] = 4;
+	    opcode_last_postfix[nr] = -1;
+	    opcode_map[nr++] = opcode;
+	    counts[opcode] = count;
+	}
+	fclose (file);
     }
     if (nr == nr_cpuop_funcs)
 	return;
     for (opcode = 0; opcode < 0x10000; opcode++) {
-		if (table68k[opcode].handler == -1 && table68k[opcode].mnemo != i_ILLG
-			&& counts[opcode] == 0)
-		{
-			//assert(count > 0);
-			opcode_next_clev[nr] = 4;
-			opcode_last_postfix[nr] = -1;
-			opcode_map[nr++] = opcode;
-			counts[opcode] = count;
-		}
+	if (table68k[opcode].handler == -1 && table68k[opcode].mnemo != i_ILLG
+	    && counts[opcode] == 0)
+	{
+	    opcode_next_clev[nr] = 4;
+	    opcode_last_postfix[nr] = -1;
+	    opcode_map[nr++] = opcode;
+	    counts[opcode] = count;
+	}
     }
     if (nr != nr_cpuop_funcs)
 	abort ();

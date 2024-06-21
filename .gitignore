@@ -37,10 +37,3 @@ project.xcworkspace/
 # JetBrains IDE settings
 #
 *.idea
-*.ipch
-/BasiliskII/src/Windows/build68k
-/BasiliskII/src/Windows/Debug
-/BasiliskII/src/Windows/gencomp/x64
-/BasiliskII/src/Windows/gencpu/x64
-/BasiliskII/src/Windows/x64
-/BasiliskII/src/Windows/BasiliskII/x64

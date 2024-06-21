@@ -24,170 +24,281 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <stdexcept>
+
 #include "sysdeps.h"
 #include "readcpu.h"
 
-
 int nr_cpuop_funcs;
-extern std::vector<mnemolookup> lookuptab;
-std::vector<instr> table68k;
 
-static inline amodes mode_from_str (std::string_view str)
+struct mnemolookup lookuptab[] = {
+    { i_ILLG, "ILLEGAL" },
+    { i_OR, "OR" },
+    { i_CHK, "CHK" },
+    { i_CHK2, "CHK2" },
+    { i_AND, "AND" },
+    { i_EOR, "EOR" },
+    { i_ORSR, "ORSR" },
+    { i_ANDSR, "ANDSR" },
+    { i_EORSR, "EORSR" },
+    { i_SUB, "SUB" },
+    { i_SUBA, "SUBA" },
+    { i_SUBX, "SUBX" },
+    { i_SBCD, "SBCD" },
+    { i_ADD, "ADD" },
+    { i_ADDA, "ADDA" },
+    { i_ADDX, "ADDX" },
+    { i_ABCD, "ABCD" },
+    { i_NEG, "NEG" },
+    { i_NEGX, "NEGX" },
+    { i_NBCD, "NBCD" },
+    { i_CLR, "CLR" },
+    { i_NOT, "NOT" },
+    { i_TST, "TST" },
+    { i_BTST, "BTST" },
+    { i_BCHG, "BCHG" },
+    { i_BCLR, "BCLR" },
+    { i_BSET, "BSET" },
+    { i_CMP, "CMP" },
+    { i_CMPM, "CMPM" },
+    { i_CMPA, "CMPA" },
+    { i_MVPRM, "MVPRM" },
+    { i_MVPMR, "MVPMR" },
+    { i_MOVE, "MOVE" },
+    { i_MOVEA, "MOVEA" },
+    { i_MVSR2, "MVSR2" },
+    { i_MV2SR, "MV2SR" },
+    { i_SWAP, "SWAP" },
+    { i_EXG, "EXG" },
+    { i_EXT, "EXT" },
+    { i_MVMEL, "MVMEL" },
+    { i_MVMLE, "MVMLE" },
+    { i_TRAP, "TRAP" },
+    { i_MVR2USP, "MVR2USP" },
+    { i_MVUSP2R, "MVUSP2R" },
+    { i_NOP, "NOP" },
+    { i_RESET, "RESET" },
+    { i_RTE, "RTE" },
+    { i_RTD, "RTD" },
+    { i_LINK, "LINK" },
+    { i_UNLK, "UNLK" },
+    { i_RTS, "RTS" },
+    { i_STOP, "STOP" },
+    { i_TRAPV, "TRAPV" },
+    { i_RTR, "RTR" },
+    { i_JSR, "JSR" },
+    { i_JMP, "JMP" },
+    { i_BSR, "BSR" },
+    { i_Bcc, "Bcc" },
+    { i_LEA, "LEA" },
+    { i_PEA, "PEA" },
+    { i_DBcc, "DBcc" },
+    { i_Scc, "Scc" },
+    { i_DIVU, "DIVU" },
+    { i_DIVS, "DIVS" },
+    { i_MULU, "MULU" },
+    { i_MULS, "MULS" },
+    { i_ASR, "ASR" },
+    { i_ASL, "ASL" },
+    { i_LSR, "LSR" },
+    { i_LSL, "LSL" },
+    { i_ROL, "ROL" },
+    { i_ROR, "ROR" },
+    { i_ROXL, "ROXL" },
+    { i_ROXR, "ROXR" },
+    { i_ASRW, "ASRW" },
+    { i_ASLW, "ASLW" },
+    { i_LSRW, "LSRW" },
+    { i_LSLW, "LSLW" },
+    { i_ROLW, "ROLW" },
+    { i_RORW, "RORW" },
+    { i_ROXLW, "ROXLW" },
+    { i_ROXRW, "ROXRW" },
+
+    { i_MOVE2C, "MOVE2C" },
+    { i_MOVEC2, "MOVEC2" },
+    { i_CAS, "CAS" },
+    { i_CAS2, "CAS2" },
+    { i_MULL, "MULL" },
+    { i_DIVL, "DIVL" },
+    { i_BFTST, "BFTST" },
+    { i_BFEXTU, "BFEXTU" },
+    { i_BFCHG, "BFCHG" },
+    { i_BFEXTS, "BFEXTS" },
+    { i_BFCLR, "BFCLR" },
+    { i_BFFFO, "BFFFO" },
+    { i_BFSET, "BFSET" },
+    { i_BFINS, "BFINS" },
+    { i_PACK, "PACK" },
+    { i_UNPK, "UNPK" },
+    { i_TAS, "TAS" },
+    { i_BKPT, "BKPT" },
+    { i_CALLM, "CALLM" },
+    { i_RTM, "RTM" },
+    { i_TRAPcc, "TRAPcc" },
+    { i_MOVES, "MOVES" },
+    { i_FPP, "FPP" },
+    { i_FDBcc, "FDBcc" },
+    { i_FScc, "FScc" },
+    { i_FTRAPcc, "FTRAPcc" },
+    { i_FBcc, "FBcc" },
+    { i_FBcc, "FBcc" },
+    { i_FSAVE, "FSAVE" },
+    { i_FRESTORE, "FRESTORE" },
+
+    { i_CINVL, "CINVL" },
+    { i_CINVP, "CINVP" },
+    { i_CINVA, "CINVA" },
+    { i_CPUSHL, "CPUSHL" },
+    { i_CPUSHP, "CPUSHP" },
+    { i_CPUSHA, "CPUSHA" },
+    { i_MOVE16, "MOVE16" },
+
+	{ i_EMULOP_RETURN, "EMULOP_RETURN" },
+	{ i_EMULOP, "EMULOP" },
+	
+    { i_MMUOP, "MMUOP" },
+    { i_ILLG, "" },
+};
+
+struct instr *table68k;
+
+static __inline__ amodes mode_from_str (const char *str)
 {
-	static constexpr auto lookup = std::to_array<std::pair<amodes,std::string_view>>({
-		{ amodes::Dreg, "Dreg" },
-		{ amodes::Areg, "Areg" },
-		{ amodes::Aind, "Aind" },
-		{ amodes::Apdi, "Apdi" },
-		{ amodes::Aipi, "Aipi" },
-		{ amodes::Ad16, "Ad16" },
-		{ amodes::absw, "absw" },
-		{ amodes::absl, "absl" },
-		{ amodes::absl, "absl" },
-		{ amodes::PC16, "PC16" },
-		{ amodes::PC8r, "PC8r" },
-		{ amodes::imm, "imm" },
-		});
-	for (const auto& v : lookup) {
-		if (v.second == str)
-			return v.first;
-	}
-	throw std::invalid_argument(std::format("mode_from_str: '{}' is not an amode", str));
-   // abort ();
-	//return static_cast<amodes>(0); // just to stop errors.  Throw?
+    if (strncmp (str, "Dreg", 4) == 0) return Dreg;
+    if (strncmp (str, "Areg", 4) == 0) return Areg;
+    if (strncmp (str, "Aind", 4) == 0) return Aind;
+    if (strncmp (str, "Apdi", 4) == 0) return Apdi;
+    if (strncmp (str, "Aipi", 4) == 0) return Aipi;
+    if (strncmp (str, "Ad16", 4) == 0) return Ad16;
+    if (strncmp (str, "Ad8r", 4) == 0) return Ad8r;
+    if (strncmp (str, "absw", 4) == 0) return absw;
+    if (strncmp (str, "absl", 4) == 0) return absl;
+    if (strncmp (str, "PC16", 4) == 0) return PC16;
+    if (strncmp (str, "PC8r", 4) == 0) return PC8r;
+    if (strncmp (str, "Immd", 4) == 0) return imm;
+    abort ();
+    return (amodes)0;
 }
 
-static inline amodes mode_from_mr (int mode, int reg)
+static __inline__ amodes mode_from_mr (int mode, int reg)
 {
     switch (mode) {
-		 case 0: return Dreg;
-		 case 1: return Areg;
-		 case 2: return Aind;
-		 case 3: return Aipi;
-		 case 4: return Apdi;
-		 case 5: return Ad16;
-		 case 6: return Ad8r;
-		 case 7:
-			switch (reg) {
-				 case 0: return absw;
-				 case 1: return absl;
-				 case 2: return PC16;
-				 case 3: return PC8r;
-				 case 4: return imm;
-				 case 5:
-				 case 6:
-				 case 7: return am_illg;
-			}
+     case 0: return Dreg;
+     case 1: return Areg;
+     case 2: return Aind;
+     case 3: return Aipi;
+     case 4: return Apdi;
+     case 5: return Ad16;
+     case 6: return Ad8r;
+     case 7:
+	switch (reg) {
+	 case 0: return absw;
+	 case 1: return absl;
+	 case 2: return PC16;
+	 case 3: return PC8r;
+	 case 4: return imm;
+	 case 5:
+	 case 6:
+	 case 7: return am_illg;
+	}
     }
-	throw std::invalid_argument(std::format("mode_from_mr: mode={} reg={} is not an amode", mode,reg));
+    abort ();
+    return (amodes)0;
 }
 
 static void build_insn (int insn)
 {
     int find = -1;
+    int variants;
+    struct instr_def id;
+    const char *opcstr;
     int i, n;
 
-    int flagdead = 0;
+    int flaglive = 0, flagdead = 0;
+	int cflow = 0;
 
-	if (static_cast<size_t>(insn) > defs68k.size()) {
-		// insn to big abbort hard
-		throw std::out_of_range(std::format("build_insn: insn={} out of range", insn));
-	}
-
-    const auto& id = defs68k[insn];
+    id = defs68k[insn];
 
 	// Control flow information
-	auto cflow = id.cflow;
+	cflow = id.cflow;
 	
 	// Mask of flags set/used
-	unsigned char flags_used(0);
+	unsigned char flags_set(0), flags_used(0);
 	
 	for (i = 0, n = 4; i < 5; i++, n--) {
 		switch (id.flaginfo[i].flagset) {
-			case fa_unset: 
-			case fa_isjmp: 
-				break;
-			default: 
-				flags_set |= (1 << n);
+			case fa_unset: case fa_isjmp: break;
+			default: flags_set |= (1 << n);
 		}
 		
 		switch (id.flaginfo[i].flaguse) {
-			case fu_unused: 
-			case fu_isjmp: 
-				break;
-			default: 
-				flags_used |= (1 << n);
+			case fu_unused: case fu_isjmp: break;
+			default: flags_used |= (1 << n);
 		}
 	}
 	
-	auto flags_set = [&id]() {
-		decltype(id.flaginfo[0].flagset) ret {};
-		for (size_t i = 0; i < 5; i++) {
-			switch (id.flaginfo[i].flagset) {
-			case fa_unset: break;
-			case fa_zero: ret |= 1 << i; break;
-			case fa_one: ret |= 1 << i; break;
-			case fa_dontcare: ret |= 1 << i; break;
-			case fa_set: ret |= 1 << i; break;
-			case fa_unknown:  return static_cast<decltype(ret)>(-1);
-			}
-		}
-		return ret;
-		}();// one way to get rid of a goto!
-	auto flaglive = [&id]() {
-		decltype(id.flaginfo[0].flaguse) ret{};
-		for (size_t i = 0; i < 5; i++) {
-			switch (id.flaginfo[i].flaguse) {
-			case fa_unset: break;
-			case fa_unknown: return static_cast<decltype(ret)>(-1);
-			case fu_used: ret |= 1 << i; break;
-			}
-		}
-		return ret;
-		}();// one way to get rid of a goto!
+    for (i = 0; i < 5; i++) {
+	switch (id.flaginfo[i].flagset){
+	 case fa_unset: break;
+	 case fa_zero: flagdead |= 1 << i; break;
+	 case fa_one: flagdead |= 1 << i; break;
+	 case fa_dontcare: flagdead |= 1 << i; break;
+	 case fa_unknown: flagdead = -1; goto out1;
+	 case fa_set: flagdead |= 1 << i; break;
+	}
+    }
 
+    out1:
+    for (i = 0; i < 5; i++) {
+	switch (id.flaginfo[i].flaguse) {
+	 case fu_unused: break;
+	 case fu_unknown: flaglive = -1; goto out2;
+	 case fu_used: flaglive |= 1 << i; break;
+	}
+    }
+    out2:
 
+    opcstr = id.opcstr;
+    for (variants = 0; variants < (1 << id.n_variable); variants++) {
+	int bitcnt[lastbit];
+	int bitval[lastbit];
+	int bitpos[lastbit];
+	int i;
+	uae_u16 opc = id.bits;
+	uae_u16 msk, vmsk;
+	int pos = 0;
+	int mnp = 0;
+	int bitno = 0;
+	char mnemonic[64];
 
-    auto opcstr = id.opcstr;
-	std::array<int, lastbit> bitcnt{};
-	std::array<int, lastbit> bitval{};
-	std::array<int, lastbit> bitpos{};
-	std::string mnemonic;
-    for (size_t variants = 0; variants < (1 << id.n_variable); variants++) {
-		uae_u16 opc = id.bits;
-		size_t mnp = 0;
-		size_t bitno = 0;
+	wordsizes sz = sz_long;
+	int srcgather = 0, dstgather = 0;
+	int usesrc = 0, usedst = 0;
+	int srctype = 0;
+	int srcpos = -1, dstpos = -1;
 
+	amodes srcmode = am_unknown, destmode = am_unknown;
+	int srcreg = -1, destreg = -1;
 
-		wordsizes sz = sz_long;
-		int srcgather = 0, dstgather = 0;
-		int usesrc = 0, usedst = 0;
-		int srctype = 0;
-		int srcpos = -1, dstpos = -1;
+	for (i = 0; i < lastbit; i++)
+	    bitcnt[i] = bitval[i] = 0;
 
-		amodes srcmode = am_unknown, destmode = am_unknown;
-		int srcreg = -1, destreg = -1;
-		bitcnt.fill({});
-		bitval.fill({});
-		bitpos.fill({});
+	vmsk = 1 << id.n_variable;
 
-
-		uae_u16 vmsk = 1 << id.n_variable;
-
-		for (uae_u16 i = 0, msk = 0x8000; i < 16; i++, msk >>= 1) {
-			if (!(msk & id.mask)) {
-				auto currbit = id.bitpos[bitno++];
-				vmsk >>= 1;
-				int bit_set = variants & vmsk ? 1 : 0;
-				if (bit_set)
-					opc |= msk;
-				bitpos[currbit] = 15 - i;
-				bitcnt[currbit]++;
-				bitval[currbit] <<= 1;
-				bitval[currbit] |= bit_set;
-			}
-		}
+	for (i = 0, msk = 0x8000; i < 16; i++, msk >>= 1) {
+	    if (!(msk & id.mask)) {
+		int currbit = id.bitpos[bitno++];
+		int bit_set;
+		vmsk >>= 1;
+		bit_set = variants & vmsk ? 1 : 0;
+		if (bit_set)
+		    opc |= msk;
+		bitpos[currbit] = 15 - i;
+		bitcnt[currbit]++;
+		bitval[currbit] <<= 1;
+		bitval[currbit] |= bit_set;
+	    }
+	}
 
 	if (bitval[bitj] == 0) bitval[bitj] = 8;
 	/* first check whether this one does not match after all */
@@ -205,50 +316,53 @@ static void build_insn (int insn)
 	if (bitcnt[bitC])
 	    bitval[bitc] = bitval[bitC];
 
-	size_t pos = 0;
-	mnemonic.clear();
+	pos = 0;
 	while (opcstr[pos] && !isspace(opcstr[pos])) {
-		if (opcstr[pos] == '.') {
-			pos++;
-			switch (opcstr[pos]) {
+	    if (opcstr[pos] == '.') {
+		pos++;
+		switch (opcstr[pos]) {
 
-			case 'B': sz = sz_byte; break;
-			case 'W': sz = sz_word; break;
-			case 'L': sz = sz_long; break;
-			case 'z':
-				switch (bitval[bitz]) {
-				case 0: sz = sz_byte; break;
-				case 1: sz = sz_word; break;
-				case 2: sz = sz_long; break;
-				default:
-					throw std::invalid_argument(std::format("build_insn: bad opstr {} ", opcstr[pos]));
-				}
-				break;
-			default:
-				throw std::invalid_argument(std::format("build_insn: bad opstr {} ", opcstr[pos]));
-			}
+		 case 'B': sz = sz_byte; break;
+		 case 'W': sz = sz_word; break;
+		 case 'L': sz = sz_long; break;
+		 case 'z':
+		    switch (bitval[bitz]) {
+		     case 0: sz = sz_byte; break;
+		     case 1: sz = sz_word; break;
+		     case 2: sz = sz_long; break;
+		     default: abort();
+		    }
+		    break;
+		 default: abort();
 		}
-		else {
-			mnemonic.push_back(opcstr[pos]);
-			if (mnemonic.back() == 'f') {
-				find = -1;
-				switch (bitval[bitf]) {
-				case 0: mnemonic.back() = 'R'; break;
-				case 1: mnemonic.back() = 'L'; break;
-				default:
-					throw std::invalid_argument(std::format("build_insn: bad opstr {} ", opcstr[pos]));
-				}
-			}
-			pos++;
+	    } else {
+		mnemonic[mnp] = opcstr[pos];
+		if (mnemonic[mnp] == 'f') {
+		    find = -1;
+		    switch (bitval[bitf]) {
+		     case 0: mnemonic[mnp] = 'R'; break;
+		     case 1: mnemonic[mnp] = 'L'; break;
+		     default: abort();
+		    }
 		}
+		mnp++;
+		if ((unsigned)mnp >= sizeof(mnemonic) - 1) {
+			mnemonic[sizeof(mnemonic) - 1] = 0;
+			fprintf(stderr, "Instruction %s overflow\n", mnemonic);
+			abort();
+		}
+	    }
+	    pos++;
+	}
+	mnemonic[mnp] = 0;
 
-		/* now, we have read the mnemonic and the size */
-		while (pos < opcstr.size() && isspace(opcstr[pos]))
-			pos++;
+	/* now, we have read the mnemonic and the size */
+	while (opcstr[pos] && isspace(opcstr[pos]))
+	    pos++;
 
-		/* A goto a day keeps the D******a away. */
-		if (pos == opcstr.size())
-			goto endofline;
+	/* A goto a day keeps the D******a away. */
+	if (opcstr[pos] == 0)
+	    goto endofline;
 
 	/* parse the source address */
 	usesrc = 1;
@@ -703,8 +817,8 @@ void read_table68k (void)
 
     table68k = (struct instr *)malloc (65536 * sizeof (struct instr));
     for (i = 0; i < 65536; i++) {
-		table68k[i].mnemo = i_ILLG;
-		table68k[i].handler = -1;
+	table68k[i].mnemo = i_ILLG;
+	table68k[i].handler = -1;
     }
     for (i = 0; i < n_defs68k; i++) {
 	build_insn (i);
