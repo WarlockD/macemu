@@ -24,13 +24,24 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#if 0
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
+#endif
+
 #include "sysdeps.h"
 #include "../readcpu.h"
+
+#include <vector>
+#include <string>
+#include <string_view>
+#include <format>
+#include <stdexcept>
+#include <cstdint>
+#include <fstream>
 
 #define BOOL_TYPE		"int"
 #define failure			global_failure=1
@@ -58,6 +69,7 @@ static char lines[100000];
 static int comp_index=0;
 
 static int cond_codes_x86[]={-1,-1,7,6,3,2,5,4,-1,-1,9,8,13,12,15,14};
+static std::string com_file_data;
 
 static void comprintf(const char* format, ...)
 {
@@ -65,6 +77,11 @@ static void comprintf(const char* format, ...)
 
     va_start(args,format);
     comp_index+=vsprintf(lines+comp_index,format,args);
+}
+
+template <typename... Args>
+static void comprints(auto&& fmt, Args&&... args) {
+	std::format_to(com_file_data, fmt, std::forward<Args>(args)...);
 }
 
 static void com_discard(void)
@@ -76,7 +93,7 @@ static void com_flush(void)
 {
     int i;
     for (i=0;i<comp_index;i++)
-	putchar(lines[i]);
+		putchar(lines[i]);
     com_discard();
 }
 
@@ -98,31 +115,37 @@ static int *opcode_map;
 static int *opcode_next_clev;
 static int *opcode_last_postfix;
 static unsigned long *counts;
+#include <spanstream>
+
 
 static void 
 read_counts (void)
 {
-    FILE *file;
-    unsigned long opcode, count, total;
+	int opcode{};
+	size_t count{};
+	size_t total{};
     char name[20];
     int nr = 0;
     memset (counts, 0, 65536 * sizeof *counts);
-
-    file = fopen ("frequent.68k", "r");
-    if (file)
-    {
-	fscanf (file, "Total: %lu\n", &total);
-	while (fscanf (file, "%lx: %lu %s\n", &opcode, &count, name) == 3)
-	{
-	    opcode_next_clev[nr] = 4;
-	    opcode_last_postfix[nr] = -1;
-	    opcode_map[nr++] = opcode;
-	    counts[opcode] = count;
-	}
-	fclose (file);
+#if 0
+	//std::ifstream file("frequent.68k", std::ifstream::in);
+	FILE* file = fopen ("frequent.68k", "r");
+	
+	if(file) {
+		(void)fscanf (file, "Total: %lu\n", &total);
+		while (fscanf (file, "%lx: %lu %s\n", &opcode, &count, name) == 3)
+		{
+			opcode_next_clev[nr] = 4;
+			opcode_last_postfix[nr] = -1;
+			opcode_map[nr++] = opcode;
+			counts[opcode] = count;
+		}
+		fclose (file);
     }
-    if (nr == nr_cpuop_funcs)
-	return;
+#endif
+    if (nr == nr_cpuop_funcs) return;
+	
+
     for (opcode = 0; opcode < 0x10000; opcode++)
     {
 	if (table68k[opcode].handler == -1 && table68k[opcode].mnemo != i_ILLG
@@ -131,11 +154,11 @@ read_counts (void)
 	    opcode_next_clev[nr] = 4;
 	    opcode_last_postfix[nr] = -1;
 	    opcode_map[nr++] = opcode;
-	    counts[opcode] = count;
+		counts[opcode] = 0;//  count;
 	}
     }
     if (nr != nr_cpuop_funcs)
-	abort ();
+		abort ();
 }
 
 static int n_braces = 0;
@@ -168,32 +191,32 @@ static __inline__ void gen_update_next_handler(void)
     return; /* Can anything clever be done here? */
 }
 
-static void gen_writebyte(char* address, char* source)
+static void gen_writebyte(const char* address, const  char* source)
 {
     comprintf("\twritebyte(%s,%s,scratchie);\n",address,source);
 }
 
-static void gen_writeword(char* address, char* source)
+static void gen_writeword(const char* address, const  char* source)
 {
     comprintf("\twriteword(%s,%s,scratchie);\n",address,source);
 }
 
-static void gen_writelong(char* address, char* source)
+static void gen_writelong(const char* address, const  char* source)
 {
     comprintf("\twritelong(%s,%s,scratchie);\n",address,source);
 }
 
-static void gen_readbyte(char* address, char* dest)
+static void gen_readbyte(const char* address, const char* dest)
 {
     comprintf("\treadbyte(%s,%s,scratchie);\n",address,dest);
 }
 
-static void gen_readword(char* address, char* dest)
+static void gen_readword(const char* address, const  char* dest)
 {
     comprintf("\treadword(%s,%s,scratchie);\n",address,dest);
 }
 
-static void gen_readlong(char* address, char* dest)
+static void gen_readlong(const char* address, const  char* dest)
 {
     comprintf("\treadlong(%s,%s,scratchie);\n",address,dest);
 }
@@ -254,8 +277,9 @@ sync_m68k_pc (void)
 /* getv == 1: fetch data; getv != 0: check for odd address. If movem != 0,
  * the calling routine handles Apdi and Aipi modes.
  * gb-- movem == 2 means the same thing but for a MOVE16 instruction */
-static void 
-genamode (amodes mode, char *reg, wordsizes size, char *name, int getv, int movem)
+
+
+static void _genamode (amodes mode, const char* reg, wordsizes size, const char *name, int getv, int movem)
 {
     start_brace ();
     switch (mode)
@@ -492,9 +516,19 @@ genamode (amodes mode, char *reg, wordsizes size, char *name, int getv, int move
 	}
     }
 }
+template<typename I1, typename I2>
+static void genamode(I1 mode, const char* reg, I2 size, const char* name, int getv, int movem) {
+	_genamode(static_cast<amodes>(mode), reg, static_cast<wordsizes>(size), name, getv, movem);
+}
 
-static void 
-genastore (char *from, amodes mode, char *reg, wordsizes size, char *to)
+
+static void  _genastore(const char* from, amodes mode, const char* reg, wordsizes size, const  char* to);
+
+template<typename I1, typename I2>
+static void genastore(const char* from, I1 mode, const char* reg, I2 size, const  char* to) {
+	_genastore(from, (amodes)mode, reg, (wordsizes)size, to);
+}
+static void  _genastore(const char *from, amodes mode, const char *reg, wordsizes size, const  char *to)
 {
     switch (mode)
     {
@@ -737,10 +771,16 @@ typedef enum
     flag_eor, flag_mov
 }
 flagtypes;
+static void _genflags(flagtypes type, wordsizes size, const char* value, const  char* src, const  char* dst);
+
+template<typename I1, typename I2>
+static void genflags(I1 type, I2 size, const char* value, const  char* src, const  char* dst) {
+	_genflags(static_cast<flagtypes>(type), static_cast<wordsizes>(size), value, src, dst);
+}
 
 
 static void 
-genflags (flagtypes type, wordsizes size, char *value, char *src, char *dst)
+_genflags(flagtypes type, wordsizes size, const char *value, const  char *src, const  char *dst)
 {
     if (noflags) {
 	switch(type) {
@@ -752,7 +792,7 @@ genflags (flagtypes type, wordsizes size, char *value, char *src, char *dst)
 	 case flag_sub:
 	    comprintf("\tdont_care_flags();\n");
 	    {
-		char* op;
+			const char* op{};
 		switch(type) {
 		 case flag_add: op="add"; break;
 		 case flag_sub: op="sub"; break;
@@ -835,7 +875,7 @@ genflags (flagtypes type, wordsizes size, char *value, char *src, char *dst)
 	    comprintf("\tdont_care_flags();\n");
 	    start_brace();
 	    {
-		char* op;
+			const char* op{};
 		switch(type) {
 		 case flag_or:  op="or"; break;
 		 case flag_eor: op="xor"; break;
@@ -872,7 +912,7 @@ genflags (flagtypes type, wordsizes size, char *value, char *src, char *dst)
 	 case flag_subx:
 	    comprintf("\tdont_care_flags();\n");
 	    {
-		char* op;
+			const char* op{};
 		switch(type) {
 		 case flag_addx: op="adc"; break;
 		 case flag_subx: op="sbb"; break;
@@ -910,7 +950,7 @@ genflags (flagtypes type, wordsizes size, char *value, char *src, char *dst)
 	comprintf("\tdont_care_flags();\n");
 	start_brace();
 	{
-	    char* op;
+		const char* op{};
 	    switch(type) {
 	     case flag_and: op="and"; break;
 	     case flag_or:  op="or"; break;
@@ -1010,7 +1050,7 @@ genflags (flagtypes type, wordsizes size, char *value, char *src, char *dst)
      case flag_cmp:
 	comprintf("\tdont_care_flags();\n");
 	{
-	    char* op;
+		const char* op{};
 	    switch(type) {
 	     case flag_add: op="add"; break;
 	     case flag_sub: op="sub"; break;
@@ -1047,7 +1087,7 @@ genflags (flagtypes type, wordsizes size, char *value, char *src, char *dst)
 	uses_cmov;
 	comprintf("\tdont_care_flags();\n");
 	{
-	    char* op;
+	    const char* op;
 	    switch(type) {
 	     case flag_addx: op="adc"; break;
 	     case flag_subx: op="sbb"; break;
@@ -1099,7 +1139,7 @@ static int  /* returns zero for success, non-zero for failure */
 gen_opcode (unsigned long int opcode)
 {
     struct instr *curi = table68k + opcode;
-    char* ssize=NULL;
+    const char* ssize=NULL;
 
     insn_n_cycles = 2;
     global_failure=0;
@@ -1288,7 +1328,7 @@ gen_opcode (unsigned long int opcode)
 	    comprintf("\tand_l_ri(s,31);\n");
 
 	{
-	    char* op;
+		const char* op{};
 	    int need_write=1;
 
 	    switch(curi->mnemo) {

@@ -139,6 +139,9 @@ uint32 TimeToMacTime(time_t t)
 		// failsafe as this will segfault
 		return 0;
 	}
+#undef max
+#undef min
+
 	#endif
 	struct tm *local = localtime(&t);
 	const int TM_EPOCH_YEAR = 1900;
@@ -154,8 +157,8 @@ uint32 TimeToMacTime(time_t t)
 	int intervening_leap_days = (a4 - b4) - (a100 - b100) + (a400 - b400);
 	uint32 days = local->tm_yday + 365 * (local->tm_year - 4) + intervening_leap_days;
 	int32 dayofs = -PrefsFindInt32("dayofs");
-	if(dayofs > 0 && dayofs > days)
-		dayofs = days;
+	if(dayofs > 0 && static_cast<decltype(days)>(dayofs) > days)
+		dayofs = static_cast<decltype(dayofs)>(days);
 	return local->tm_sec + 60 * (local->tm_min + 60 * (local->tm_hour + 24 * (days - dayofs)));
 }
 

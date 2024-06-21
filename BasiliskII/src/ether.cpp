@@ -481,8 +481,8 @@ EthernetPacket::~EthernetPacket()
 		r.a[0] = packet;
 		Execute68kTrap(0xa01f, &r);		// DisposePtr
 	}
-	if (n_ether_packets > 0) {
-		bug("WARNING: Nested allocation of ethernet packets!\n");
+	if (n_ether_packets > 0) { 
+		//bug(TEXT("WARNING: Nested allocation of ethernet packets!\n"));
 	}
 }
 #endif

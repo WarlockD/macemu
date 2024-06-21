@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\uae_cpu\compiler\gencomp.c">
+    <ClCompile Include="..\uae_cpu\compiler\gencomp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\uae_cpu\readcpu.cpp">

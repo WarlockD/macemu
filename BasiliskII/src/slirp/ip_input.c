@@ -165,6 +165,10 @@ ip_input(m)
 	 * 
 	 * XXX This should fail, don't fragment yet
 	 */
+#ifdef CONTAINING_RECORD
+#define container_of CONTAINING_RECORD
+#endif
+
 	if (ip->ip_off &~ IP_DF) {
 	  register struct ipq *fp;
       struct qlink *l;
@@ -182,7 +186,7 @@ ip_input(m)
         }
         fp = NULL;
 	found:
-
+		
 		/*
 		 * Adjust ip_len to not reflect header,
 		 * set ip_mff if more fragments are expected,

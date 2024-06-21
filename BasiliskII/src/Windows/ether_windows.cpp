@@ -40,10 +40,11 @@
 #include "router/router.h"
 #include "util_windows.h"
 // somehow util_windows undefines min
-#define min(x,y) ((x) < (y) ? (x) : (y))
+//#define min(x,y) ((x) < (y) ? (x) : (y))
 #include "libslirp.h"
 #include "ctl.h"
 
+#include <Ws2tcpip.h>
 // Define to let the slirp library determine the right timeout for select()
 #define USE_SLIRP_TIMEOUT 1
 

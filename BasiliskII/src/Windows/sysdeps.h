@@ -42,6 +42,8 @@
 #include <string.h>
 #include <tchar.h>
 #include <time.h>
+#include <stdint.h>
+
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <WinSock2.h>

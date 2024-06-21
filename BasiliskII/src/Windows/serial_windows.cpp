@@ -29,7 +29,7 @@
 #include "main.h"
 #include "util_windows.h"
 // somehow util_windows undefines min
-#define min(x,y) ((x) < (y) ? (x) : (y))
+//#define min(x,y) ((x) < (y) ? (x) : (y))
 #include "macos_util.h"
 #include "prefs.h"
 #include "serial.h"
@@ -113,7 +113,7 @@ class XSERDPort : public SERDPort {
 public:
   XSERDPort(LPCTSTR dev, LPCTSTR suffix)
   {
-		D(bug(TEXT("XSERDPort constructor %s\r\n"), dev));
+		D(wbug(TEXT("XSERDPort constructor %s\r\n"), dev));
 
 		read_pending = write_pending = false;
 
@@ -251,7 +251,7 @@ int16 XSERDPort::open(uint16 config)
 	if (!device_name || !*device_name)
 		return openErr;
 
-	D(bug(TEXT("XSERDPort::open device=%s,config=0x%X\r\n"),device_name,(int)config));
+	D(wbug(TEXT("XSERDPort::open device=%s,config=0x%X\r\n"),device_name,(int)config));
 
 	// Init variables
 	io_killed = false;
@@ -270,7 +270,7 @@ int16 XSERDPort::open(uint16 config)
 	}
 	if(fd == INVALID_HANDLE_VALUE) {
 		goto open_error;
-		D(bug(TEXT("XSERDPort::open failed to open port %s\r\n"),device_name));
+		D(wbug(TEXT("XSERDPort::open failed to open port %s\r\n"),device_name));
 	}
 
 	if(is_serial) {
@@ -1048,7 +1048,7 @@ unsigned int XSERDPort::input_func(void *arg)
 	set_desktop();
 #endif
 
-	D(bug(TEXT("XSERDPort::input_func started for device %s\r\n"),s->device_name));
+	D(wbug(TEXT("XSERDPort::input_func started for device %s\r\n"),s->device_name));
 
 	for (;;) {
 
@@ -1133,7 +1133,7 @@ unsigned int XSERDPort::output_func(void *arg)
 	set_desktop();
 #endif
 
-	D(bug(TEXT("XSERDPort::output_func started for device %s\r\n"),s->device_name));
+	D(wbug(TEXT("XSERDPort::output_func started for device %s\r\n"),s->device_name));
 
 	for (;;) {
 

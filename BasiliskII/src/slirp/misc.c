@@ -576,21 +576,14 @@ int (*lprint_print) _P((void *, const char *, va_list));
 char *lprint_ptr, *lprint_ptr2, **lprint_arg;
 
 void
-#ifdef __STDC__
 lprint(const char *format, ...)
-#else
-lprint(va_alist) va_dcl
-#endif
 {
 	va_list args;
         
-#ifdef __STDC__
         va_start(args, format);
-#else
-        char *format;
-        va_start(args);
-        format = va_arg(args, char *);
-#endif
+
+      //  format = va_arg(args, char *);
+
 #if 0
 	/* If we're printing to an sbuf, make sure there's enough room */
 	/* XXX +100? */
@@ -639,9 +632,7 @@ lprint(va_alist) va_dcl
 	va_end(args);
 }
 
-void
-add_emu(buff)
-	char *buff;
+static void add_emu(char* buff)
 {
 	u_int lport, fport;
 	u_int8_t tos = 0, emu = 0;
@@ -767,8 +758,7 @@ sprintf_len(va_alist) va_dcl
 #endif
 
 void
-u_sleep(usec)
-	int usec;
+u_sleep(int usec)
 {
 	struct timeval t;
 	fd_set fdset;
@@ -786,8 +776,7 @@ u_sleep(usec)
  */
 
 void
-fd_nonblock(fd)
-	int fd;
+fd_nonblock(int fd)
 {
 #if defined USE_FIONBIO && defined FIONBIO
 	ioctlsockopt_t opt = 1;
@@ -803,8 +792,7 @@ fd_nonblock(fd)
 }
 
 void
-fd_block(fd)
-	int fd;
+fd_block(int fd)
 {
 #if defined USE_FIONBIO && defined FIONBIO
 	ioctlsockopt_t opt = 0;

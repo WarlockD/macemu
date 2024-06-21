@@ -62,6 +62,7 @@ static inline void _cdecl vwwinbug( const wchar_t *s, va_list vargs)
 
 	OutputDebugStringW(msg);
 }
+
 static inline void _cdecl winbug( const char *s, ...)
 {
 	va_list vargs;
@@ -69,7 +70,8 @@ static inline void _cdecl winbug( const char *s, ...)
 	vwinbug(s, vargs);
 	va_end(vargs);
 }
-static inline void _cdecl wwinbug(const wchar_t *s, ...)
+
+static inline void _cdecl wwinbug(LPCTSTR s, ...)
 {
 	va_list vargs;
 	va_start(vargs, s);
@@ -78,13 +80,16 @@ static inline void _cdecl wwinbug(const wchar_t *s, ...)
 }
 
 #ifdef __cplusplus
-static inline void _cdecl winbug(wchar_t *s, ...)
+#if 0
+static inline void _cdecl winbug(LPTSTR *s, ...)
 {
 	va_list vargs;
 	va_start(vargs, s);
 	vwwinbug(s, vargs);
 	va_end(vargs);
 }
+#endif
+
 #endif
 #define bug winbug
 #define wbug wwinbug

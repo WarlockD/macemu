@@ -240,8 +240,9 @@ int main(int argc, char **argv)
 	{
 	    int j;
 	    /* Remove superfluous spaces from the string */
-	    char *opstrp = opcstr, *osendp;
-	    int slen = 0;
+		char* opstrp = opcstr;
+		char* osendp = NULL;
+	    size_t slen = 0;
 
 	    while (isspace(*opstrp))
 		opstrp++;

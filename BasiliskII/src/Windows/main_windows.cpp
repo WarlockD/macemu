@@ -49,6 +49,10 @@ typedef std::basic_string<TCHAR> tstring;
 #include "vm_alloc.h"
 #include "sigsegv.h"
 #include "util_windows.h"
+#include <chrono>
+#include <thread>
+#include <string>
+#include <string_view>
 
 #if USE_JIT
 extern void flush_icache_range(uint8 *start, uint32 size); // from compemu_support.cpp
@@ -202,7 +206,7 @@ void cpu_do_check_ticks(void)
 	if (delay < 0)
 		delay = PrefsFindInt32("delay");
 	if (delay)
-		usleep(delay);
+		std::this_thread::sleep_for(std::chrono::microseconds(delay));
 }
 
 
@@ -386,10 +390,19 @@ int main(int argc, char **argv)
 	D(bug("Mac ROM starts at %p (%08x)\n", ROMBaseHost, ROMBaseMac));
 	
 	// Get rom file path from preferences
-	const char* rom_path = PrefsFindString("rom");
+	const char* roms = PrefsFindString("rom");
+	std::string rom_path;
+	std::wstring wrom_path = L"ROM";
+	if (roms && strlen(roms) > 0) {
+		wrom_path.resize(rom_path.size());
+		//(rom_path.size(), L' '); // Overestimate number of code points.
+		wrom_path.resize(std::mbstowcs(&wrom_path[0], rom_path.c_str(), rom_path.size())); // Shrink to fit.
+	}
 
+
+	//std::to_wstring()
 	// Load Mac ROM
-	HANDLE rom_fh = CreateFile((rom_path != NULL) ? rom_path : ROM_FILE_NAME,
+	HANDLE rom_fh = CreateFile((wrom_path.size() > 0) ? wrom_path.c_str() : ROM_FILE_NAME,
 							   GENERIC_READ,
 							   FILE_SHARE_READ, NULL,
 							   OPEN_EXISTING,
